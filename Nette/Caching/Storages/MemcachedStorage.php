@@ -37,6 +37,12 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 	/** @var IJournal */
 	private $journal;
 
+	/** @var callable */
+	private $failureCallback;
+
+	/** @var callable */
+	private $errorHandler;
+
 
 
 	/**
@@ -62,6 +68,19 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 		if ($host) {
 			$this->addServer($host, $port);
 		}
+
+		$_this = $this;
+		$this->errorHandler = function($severity, $message) use ($_this) {
+			restore_error_handler();
+
+			$failureCallback = $_this->getFailureCallback();
+			if ($failureCallback !== NULL) {
+				preg_match('#: Server (.+) \(tcp ([0-9]+)#', $message, $m);
+				return call_user_func($failureCallback, isset($m[1]) ? $m[1] : '', isset($m[2]) ? (int) $m[2] : 0, $_this->getConnection(), $message, $severity);
+			}
+
+			return FALSE;
+		};
 	}
 
 
@@ -87,6 +106,27 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 
 
 	/**
+	 * Sets failure callback for all added servers.
+	 * @param  callable  function(string $host, int $port, \Memcache $memcache, string $message, int $errorSeverity)
+	 */
+	public function setFailureCallback($callback)
+	{
+		if ($callback !== NULL && !is_callable($callback)) {
+			throw new Nette\InvalidArgumentException('Argument must be callable.');
+		}
+		$this->failureCallback = $callback;
+	}
+
+
+
+	public function getFailureCallback()
+	{
+		return $this->failureCallback;
+	}
+
+
+
+	/**
 	 * Read from cache.
 	 * @param  string key
 	 * @return mixed|NULL
@@ -94,7 +134,9 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 	public function read($key)
 	{
 		$key = $this->prefix . $key;
+		set_error_handler($this->errorHandler);
 		$meta = $this->memcache->get($key);
+		restore_error_handler();
 		if (!$meta) {
 			return NULL;
 		}
@@ -108,12 +150,16 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 
 		// verify dependencies
 		if (!empty($meta[self::META_CALLBACKS]) && !Cache::checkCallbacks($meta[self::META_CALLBACKS])) {
+			set_error_handler($this->errorHandler);
 			$this->memcache->delete($key, 0);
+			restore_error_handler();
 			return NULL;
 		}
 
 		if (!empty($meta[self::META_DELTA])) {
+			set_error_handler($this->errorHandler);
 			$this->memcache->replace($key, $meta, 0, $meta[self::META_DELTA] + time());
+			restore_error_handler();
 		}
 
 		return $meta[self::META_DATA];
@@ -169,7 +215,9 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 			$this->journal->write($key, $dp);
 		}
 
+		set_error_handler($this->errorHandler);
 		$this->memcache->set($key, $meta, 0, $expire);
+		restore_error_handler();
 	}
 
 
@@ -181,7 +229,9 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 	 */
 	public function remove($key)
 	{
+		set_error_handler($this->errorHandler);
 		$this->memcache->delete($this->prefix . $key, 0);
+		restore_error_handler();
 	}
 
 
@@ -194,11 +244,15 @@ class MemcachedStorage extends Nette\Object implements Nette\Caching\IStorage
 	public function clean(array $conditions)
 	{
 		if (!empty($conditions[Cache::ALL])) {
+			set_error_handler($this->errorHandler);
 			$this->memcache->flush();
+			restore_error_handler();
 
 		} elseif ($this->journal) {
 			foreach ($this->journal->clean($conditions) as $entry) {
+				set_error_handler($this->errorHandler);
 				$this->memcache->delete($entry, 0);
+				restore_error_handler();
 			}
 		}
 	}
