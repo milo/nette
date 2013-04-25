@@ -11,7 +11,7 @@
 
 require __DIR__ . '/connect.inc.php'; // create $connection
 
-Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test2.sql");
+loadSqlFile(__DIR__ . "/files/{$driverName}-nette_test2.sql");
 $dao = new Nette\Database\SelectionFactory(
 	$connection,
 	new Nette\Database\Reflection\DiscoveredReflection($connection)
@@ -31,3 +31,18 @@ Assert::same(array(
 	'Topic #3' => 'John',
 	'Topic #2' => 'Doe',
 ), $titles);
+
+Assert::same(reformat(array(
+	'getColumns(nUsers)',
+	'SELECT * FROM [nUsers] ORDER BY [nUserId]',
+	'getTables',
+	'getForeignKeys(nPriorities)',
+	'getForeignKeys(nTopics)',
+	'getForeignKeys(nUsers)',
+	'getForeignKeys(nUsers_nTopics)',
+	'getForeignKeys(nUsers_nTopics_alt)',
+	'getColumns(nUsers_nTopics)',
+	'SELECT * FROM [nUsers_nTopics] WHERE ([nUsers_nTopics].[nUserId] IN (1, 2)) ORDER BY [nUsers_nTopics].[nUserId], [nTopicId]',
+	'getColumns(nTopics)',
+	'SELECT * FROM [nTopics] WHERE ([nTopicId] IN (10, 12, 11))',
+)), $monitor->getQueries());

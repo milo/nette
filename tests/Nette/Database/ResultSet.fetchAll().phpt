@@ -10,7 +10,7 @@
 
 require __DIR__ . '/connect.inc.php'; // create $connection
 
-Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+loadSqlFile(__DIR__ . "/files/{$driverName}-nette_test1.sql");
 
 
 
@@ -43,3 +43,5 @@ Assert::equal(array(
 	Nette\Database\Row::from(array('id' => 3)),
 	Nette\Database\Row::from(array('id' => 4)),
 ), $res->fetchAll());
+
+Assert::same(array('SELECT id FROM book ORDER BY id'), $monitor->getQueries());

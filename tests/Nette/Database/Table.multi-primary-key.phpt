@@ -10,7 +10,7 @@
 
 require __DIR__ . '/connect.inc.php'; // create $connection
 
-Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+loadSqlFile(__DIR__ . "/files/{$driverName}-nette_test1.sql");
 $cacheStorage = new Nette\Caching\Storages\MemoryStorage;
 $dao = new Nette\Database\SelectionFactory(
 	$connection,
@@ -35,6 +35,24 @@ Assert::same(1, $count);
 
 $count = $dao->table('book_tag')->count('*');
 Assert::same(5, $count);
+Assert::same(reformat(array(
+	'getColumns(book)',
+	'SELECT * FROM [book] WHERE ([id] = 1)',
+	'getTables',
+	'getForeignKeys(author)',
+	'getForeignKeys(book)',
+	'getForeignKeys(book_tag)',
+	'getForeignKeys(book_tag_alt)',
+	'getForeignKeys(note)',
+	'getForeignKeys(tag)',
+	'getColumns(book_tag)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1))',
+	'getColumns(tag)',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22))',
+	'DELETE FROM [book_tag] WHERE ([book_id] = 1) AND ([tag_id] = 21)',
+	'SELECT COUNT(*), [book_tag].[book_id] FROM [book_tag] WHERE ([book_tag].[book_id] IN (1)) GROUP BY [book_tag].[book_id]',
+	'SELECT COUNT(*) FROM [book_tag]',
+)), $monitor->getQueries());
 
 
 
@@ -55,6 +73,14 @@ Assert::same(array(
 	'private',
 	'public',
 ), $states);
+Assert::same(reformat(array(
+	'SELECT * FROM [book] WHERE ([id] = 3)',
+	'getColumns(book_tag_alt)',
+	'SELECT * FROM [book_tag_alt] WHERE ([book_tag_alt].[book_id] IN (3))',
+	'SELECT * FROM [book] WHERE ([id] = 3)',
+	'SELECT [book_id], [tag_id] FROM [book_tag_alt] WHERE ([book_tag_alt].[book_id] IN (3))',
+	'SELECT * FROM [book_tag_alt] WHERE ([book_tag_alt].[book_id] IN (3))',
+)), $monitor->getQueries());
 
 
 
@@ -64,3 +90,15 @@ $dao->table('book_tag')->insert(array(
 ));
 $count = $dao->table('book_tag')->where('book_id', 1)->count('*');
 Assert::same(2, $count);
+Assert::same(reformat(array(
+	array(
+		'mysql|pgsql' => 'INSERT INTO [book_tag] ([book_id], [tag_id]) VALUES (1, 21)',
+		'sqlite' => 'INSERT INTO [book_tag] ([book_id], [tag_id]) SELECT 1, 21',
+	),
+	array(
+		'pgsql' => 'getColumns(book_tag)',
+		'mysql|sqlite' => NULL,
+	),
+	'SELECT * FROM [book_tag] WHERE ([book_id] = 1) AND ([tag_id] = 21)',
+	'SELECT COUNT(*) FROM [book_tag] WHERE ([book_id] = 1)',
+)), $monitor->getQueries());

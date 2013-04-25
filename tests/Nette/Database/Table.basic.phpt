@@ -11,7 +11,7 @@
 
 require __DIR__ . '/connect.inc.php'; // create $connection
 
-Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+loadSqlFile(__DIR__ . "/files/{$driverName}-nette_test1.sql");
 
 
 
@@ -20,17 +20,22 @@ Assert::same(array(
 	'id' => 1,
 	'title' => '1001 tipu a triku pro PHP',
 ), $book);
+Assert::same(array(reformat('SELECT [id], [title] FROM [book] WHERE ([id] = 1)')), $monitor->getQueries());
+
 
 $book = $dao->table('book')->select('id, title')->where('id = ?', 1)->fetch()->toArray();  // SELECT `id`, `title` FROM `book` WHERE (`id` = ?)
 Assert::same(array(
 	'id' => 1,
 	'title' => '1001 tipu a triku pro PHP',
 ), $book);
+Assert::same(array(reformat('SELECT [id], [title] FROM [book] WHERE ([id] = 1)')), $monitor->getQueries());
+
 
 $book = $dao->table('book')->get(1);
 Assert::exception(function() use ($book) {
 	$book->unknown_column;
 }, 'Nette\MemberAccessException', 'Cannot read an undeclared column "unknown_column".');
+Assert::same(array(reformat('SELECT * FROM [book] WHERE ([id] = 1)')), $monitor->getQueries());
 
 
 
@@ -65,6 +70,13 @@ Assert::same(array(
 	),
 ), $bookTags);
 
+Assert::same(reformat(array(
+	'SELECT * FROM [book]',
+	'SELECT * FROM [author] WHERE ([id] IN (11, 12))',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1, 2, 3, 4))',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22, 23))',
+)), $monitor->getQueries());
+
 
 
 $dao = new Nette\Database\SelectionFactory(
@@ -84,3 +96,17 @@ Assert::exception(function() use ($book) {
 Assert::exception(function() use ($book) {
 	$book->related('test');
 }, 'Nette\Database\Reflection\MissingReferenceException', 'No reference found for $book->related(test).');
+
+Assert::same(reformat(array(
+	'getColumns(book)',
+	'SELECT * FROM [book] WHERE ([id] = 1)',
+	'getForeignKeys(book)',
+	'getForeignKeys(book)',
+	'getTables',
+	'getForeignKeys(author)',
+	'getForeignKeys(book)',
+	'getForeignKeys(book_tag)',
+	'getForeignKeys(book_tag_alt)',
+	'getForeignKeys(note)',
+	'getForeignKeys(tag)',
+)), $monitor->getQueries());

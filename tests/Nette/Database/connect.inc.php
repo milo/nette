@@ -9,6 +9,7 @@
  */
 
 require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/helpers.inc.php';
 
 
 if (!is_file(__DIR__ . '/databases.ini')) {
@@ -32,10 +33,34 @@ $driverName = $connection->getPdo()->getAttribute(PDO::ATTR_DRIVER_NAME);
 $dao = new Nette\Database\SelectionFactory($connection);
 
 
+
 /** Replaces [] with driver-specific quotes */
 function reformat($s)
 {
 	global $driverName;
+	if (is_array($s)) {
+		$ret = array();
+		foreach ($s as $sql) {
+			if (is_array($sql)) {
+				$found = FALSE;
+				foreach ($sql as $k => $v) {
+					if (in_array($driverName, explode('|', $k), TRUE)) {
+						if ($v !== NULL) {
+							$ret[] = reformat($v);
+						}
+						$found = TRUE;
+						break;
+					}
+				}
+				!$found && trigger_error("Unsupported driver $driverName", E_USER_WARNING);
+
+			} else {
+				$ret[] = reformat($sql);
+			}
+		}
+		return $ret;
+	}
+
 	if ($driverName === 'mysql') {
 		return strtr($s, '[]', '``');
 	} elseif ($driverName === 'pgsql') {
@@ -45,4 +70,33 @@ function reformat($s)
 	} else {
 		trigger_error("Unsupported driver $driverName", E_USER_WARNING);
 	}
+}
+
+
+/* Listen for all queries */
+$monitor = new QueryMonitor($driverName);
+$connection->onQuery[] = function($dao, $result) use ($monitor) {
+	if (!$result instanceof Exception) {
+		$monitor->query($result->queryString);
+	}
+};
+
+/* Wrap supplemental driver to catch reflection queries purpose */
+$driverWrapper = new DriverWrapper($connection->getSupplementalDriver(), $monitor);
+$ref = new ReflectionClass($connection);
+$ref = $ref->getProperty('driver');
+$ref->setAccessible(TRUE);
+$ref->setValue($connection, $driverWrapper);
+$ref->setAccessible(FALSE);
+unset($ref);
+
+
+
+/** Load SQL */
+function loadSqlFile($file) {
+	global $connection;
+	global $monitor;
+
+	Nette\Database\Helpers::loadFromFile($connection, $file);
+	$monitor->flush();
 }
