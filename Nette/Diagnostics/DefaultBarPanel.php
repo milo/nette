@@ -36,7 +36,16 @@ class DefaultBarPanel extends Nette\Object implements IBarPanel
 	public function getTab()
 	{
 		ob_start();
-		require __DIR__ . "/templates/bar.{$this->id}.tab.phtml";
+		$data = $this->data;
+		if ($this->id === 'time') {
+			require __DIR__ . '/templates/bar.time.tab.phtml';
+		} elseif ($this->id === 'memory') {
+			require __DIR__ . '/templates/bar.memory.tab.phtml';
+		} elseif ($this->id === 'dumps' && $this->data) {
+			require __DIR__ . '/templates/bar.dumps.tab.phtml';
+		} elseif ($this->id === 'errors' && $this->data) {
+			require __DIR__ . '/templates/bar.errors.tab.phtml';
+		}
 		return ob_get_clean();
 	}
 
@@ -48,8 +57,11 @@ class DefaultBarPanel extends Nette\Object implements IBarPanel
 	public function getPanel()
 	{
 		ob_start();
-		if (is_file(__DIR__ . "/templates/bar.{$this->id}.panel.phtml")) {
-			require __DIR__ . "/templates/bar.{$this->id}.panel.phtml";
+		$data = $this->data;
+		if ($this->id === 'dumps') {
+			require __DIR__ . '/templates/bar.dumps.panel.phtml';
+		} elseif ($this->id === 'errors') {
+			require __DIR__ . '/templates/bar.errors.panel.phtml';
 		}
 		return ob_get_clean();
 	}
