@@ -10,7 +10,8 @@ namespace Nette\Application\Diagnostics;
 use Nette,
 	Nette\Application\Routers,
 	Nette\Application\UI\Presenter,
-	Nette\Diagnostics\Dumper;
+	Nette\Diagnostics\Dumper,
+	Nette\Diagnostics\Helpers; // minify hotfix
 
 
 /**

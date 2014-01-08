@@ -8,7 +8,8 @@
 namespace Nette\DI\Diagnostics;
 
 use Nette,
-	Nette\DI\Container;
+	Nette\DI\Container,
+	Nette\Diagnostics\Dumper; // minify hotfix
 
 
 /**
