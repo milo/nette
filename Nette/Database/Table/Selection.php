@@ -697,32 +697,47 @@ class Selection extends Nette\Object implements \Iterator, IRowContainer, \Array
 			$data = iterator_to_array($data);
 		}
 
-		$return = $this->connection->query($this->sqlBuilder->buildInsertQuery(), $data);
+		$byReturning = $this->connection->getSupplementalDriver()->isSupported(ISupplementalDriver::SUPPORT_RETURNING);
+
+		$return = $byReturning
+			? $this->connection->query($this->sqlBuilder->buildInsertQuery(), $data, 'RETURNING *') // better would be RETURNING "primary", "key", "columns", "only"
+			: $this->connection->query($this->sqlBuilder->buildInsertQuery(), $data);
 
 		if ($data instanceof Nette\Database\SqlLiteral || $this->primary === NULL) {
 			return $return->getRowCount();
 		}
 
-		$primaryKey = $this->connection->getInsertId($this->getPrimarySequence());
-		if (is_array($this->getPrimary())) {
-			$primaryKey = array();
+		$selection = $this->createSelectionInstance();
+		if ($byReturning) {
+			// Test Database\Table\Table.update().phpt fails
+			// $row = new ActiveRow((array) $return->fetch(), $selection);
+			$row = $selection
+				->select('*')
+				->where(array_intersect_key((array) $return->fetch(), array_flip((array) $this->getPrimary())))
+				->fetch();
 
-			foreach ((array) $this->getPrimary() as $key) {
-				if (!isset($data[$key])) {
-					return $data;
+		} else {
+			$primaryKey = $this->connection->getInsertId($this->getPrimarySequence());
+			if (is_array($this->getPrimary())) {
+				$primaryKey = array();
+
+				foreach ((array) $this->getPrimary() as $key) {
+					if (!isset($data[$key])) {
+						return $data;
+					}
+
+					$primaryKey[$key] = $data[$key];
 				}
+				if (count($primaryKey) === 1) {
+					$primaryKey = reset($primaryKey);
+				}
+			}
 
-				$primaryKey[$key] = $data[$key];
-			}
-			if (count($primaryKey) === 1) {
-				$primaryKey = reset($primaryKey);
-			}
+			$row = $selection
+				->select('*')
+				->wherePrimary($primaryKey)
+				->fetch();
 		}
-
-		$row = $this->createSelectionInstance()
-			->select('*')
-			->wherePrimary($primaryKey)
-			->fetch();
 
 		$this->loadRefCache();
 		if ($this->rows !== NULL) {
