@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -48,6 +49,20 @@ test(function() use ($context) {
 	Assert::same($expectBooks, $books2);
 	Assert::same($expectBooks, $books3);
 });
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT * FROM [author]',
+	'-- getColumns(book)',
+	'SELECT * FROM [book] WHERE ([book].[translator_id] IN (11, 12, 13))',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13))',
+	'-- getTables',
+	'-- getForeignKeys(author)',
+	'-- getForeignKeys(book)',
+	'-- getForeignKeys(book_tag)',
+	'-- getForeignKeys(book_tag_alt)',
+	'-- getForeignKeys(note)',
+	'-- getForeignKeys(tag)',
+));
 
 
 test(function() use ($context) {
@@ -75,6 +90,16 @@ test(function() use ($context) {
 		),
 	), $tagsAuthors);
 });
+assertQueries(array(
+	'-- getColumns(tag)',
+	'SELECT * FROM [tag]',
+	'-- getColumns(book_tag)',
+	'SELECT [book_tag].[tag_id], [book].[author_id] FROM [book_tag] '
+		. 'LEFT JOIN [book] ON [book_tag].[book_id] = [book].[id] '
+		. 'LEFT JOIN [author] ON [book].[author_id] = [author].[id] '
+		. 'WHERE ([book_tag].[tag_id] IN (21, 22, 23, 24)) GROUP BY [book_tag].[tag_id], [book].[author_id], [author].[name] ORDER BY [book_tag].[tag_id], [author].[name]',
+	'SELECT * FROM [author] WHERE ([id] IN (12, 11))',
+));
 
 
 test(function() use ($context) {
@@ -87,6 +112,11 @@ test(function() use ($context) {
 	Assert::same(array(2, 2, 0), $counts1);
 	Assert::same(array(1, 0, 0), $counts2);
 });
+assertQueries(array(
+	'SELECT * FROM [author] ORDER BY [id]',
+	'SELECT COUNT([id]), [book].[author_id] FROM [book] WHERE ([book].[author_id] IN (11, 12, 13)) GROUP BY [book].[author_id]',
+	'SELECT COUNT([id]), [book].[author_id] FROM [book] WHERE ([book].[author_id] IN (11, 12, 13)) AND ([translator_id] IS NULL) GROUP BY [book].[author_id]',
+));
 
 
 test(function() use ($context) {
@@ -99,3 +129,9 @@ test(function() use ($context) {
 
 	Assert::same('JUSH', $author->related('book', NULL, TRUE)->where('translator_id', NULL)->fetch()->title);
 });
+assertQueries(array(
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) AND ([translator_id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) AND ([translator_id] IS NULL)',
+));

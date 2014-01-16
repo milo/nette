@@ -15,6 +15,7 @@ use Nette\Database\Table\SqlBuilder;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($connection, $reflection) { // test paramateres with NULL
@@ -23,6 +24,8 @@ test(function() use ($connection, $reflection) { // test paramateres with NULL
 	$sqlBuilder->addWhere('id ? OR id ?', array(1, NULL)); // duplicit condition
 	Assert::same(reformat('SELECT * FROM [book] WHERE ([id] = ? OR [id] IS NULL)'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($context, $connection, $reflection) { // test Selection as a parameter
@@ -33,6 +36,12 @@ test(function() use ($context, $connection, $reflection) { // test Selection as 
 		'SELECT * FROM [book] WHERE ([id] IN (SELECT [id] FROM [book]))',
 	)), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	array(
+		'mysql' => 'SELECT [id] FROM [book]',
+	),
+));
 
 
 test(function() use ($context, $connection, $reflection) { // test Selection with column as a parameter
@@ -43,6 +52,11 @@ test(function() use ($context, $connection, $reflection) { // test Selection wit
 		'SELECT * FROM [book] WHERE ([id] IN (SELECT [id] FROM [book]))',
 	)), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+	array(
+		'mysql' => 'SELECT [id] FROM [book]',
+	),
+));
 
 
 test(function() use ($context, $connection, $reflection) { // test multiple placeholder parameter
@@ -53,6 +67,11 @@ test(function() use ($context, $connection, $reflection) { // test multiple plac
 		'SELECT * FROM [book] WHERE ([id] IS NULL OR [id] IN (SELECT [id] FROM [book]))',
 	)), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+	array(
+		'mysql' => 'SELECT [id] FROM [book]',
+	),
+));
 
 
 test(function() use ($connection, $reflection) { // test SqlLiteral
@@ -60,6 +79,8 @@ test(function() use ($connection, $reflection) { // test SqlLiteral
 	$sqlBuilder->addWhere('id IN (?)', new SqlLiteral('1, 2, 3'));
 	Assert::same(reformat('SELECT * FROM [book] WHERE ([id] IN (?))'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // test auto type detection
@@ -67,6 +88,8 @@ test(function() use ($connection, $reflection) { // test auto type detection
 	$sqlBuilder->addWhere('id ? OR id ? OR id ?', 1, "test", array(1, 2));
 	Assert::same(reformat('SELECT * FROM [book] WHERE ([id] = ? OR [id] = ? OR [id] IN (?))'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // test empty array
@@ -85,6 +108,8 @@ test(function() use ($connection, $reflection) { // test empty array
 
 	Assert::same(reformat('SELECT * FROM [book] WHERE ([id] IS NULL AND FALSE) AND ([id] IS NULL OR TRUE) AND (NOT ([id] IS NULL AND FALSE))'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // backward compatibility
@@ -95,6 +120,8 @@ test(function() use ($connection, $reflection) { // backward compatibility
 	$sqlBuilder->addWhere('id IN (?)', array(1, 2));
 	Assert::same(reformat('SELECT * FROM [book] WHERE ([id] = ? OR [id] = ? OR [id] IN (?) OR [id] LIKE ? OR [id] > ?) AND ([name] = ?) AND (MAIN = ?) AND ([id] IN (?))'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // auto operator tests
@@ -107,6 +134,8 @@ test(function() use ($connection, $reflection) { // auto operator tests
 	$sqlBuilder->addWhere('? + ? - ? / ? * ? % ?', 1, 1, 1, 1, 1, 1);
 	Assert::same(reformat('SELECT * FROM [book] WHERE (FOO(?)) AND (FOO([id], ?)) AND ([id] & ? = ?) AND (?) AND (NOT ? OR ?) AND (? + ? - ? / ? * ? % ?)'), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // tests multiline condition
@@ -114,6 +143,8 @@ test(function() use ($connection, $reflection) { // tests multiline condition
 	$sqlBuilder->addWhere("\ncol1 ?\nOR col2 ?\n", 1, 1);
 	Assert::same(reformat("SELECT * FROM [book] WHERE ([col1] = ?\nOR [col2] = ?)"), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($context, $connection, $reflection) { // tests NOT
@@ -125,6 +156,11 @@ test(function() use ($context, $connection, $reflection) { // tests NOT
 		'SELECT * FROM [book] WHERE ([id] NOT IN (?)) AND ([id] NOT IN (SELECT [id] FROM [book]))',
 	)), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+	array(
+		'mysql' => 'SELECT [id] FROM [book]',
+	),
+));
 
 
 test(function() use ($connection, $reflection) { // tests multi column IN clause
@@ -136,6 +172,8 @@ test(function() use ($connection, $reflection) { // tests multi column IN clause
 		'SELECT * FROM [book_tag] WHERE (([book_id], [tag_id]) IN (?))',
 	)), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($connection, $reflection) { // tests operator suffix
@@ -143,6 +181,8 @@ test(function() use ($connection, $reflection) { // tests operator suffix
 	$sqlBuilder->addWhere('id <> ? OR id >= ?', 1, 2);
 	Assert::same(reformat("SELECT * FROM [book] WHERE ([id] <> ? OR [id] >= ?)"), $sqlBuilder->buildSelectQuery());
 });
+assertQueries(array(
+));
 
 
 test(function() use ($context) {
@@ -151,6 +191,16 @@ test(function() use ($context) {
 	);
 	Assert::same(3, $books->count());
 });
+assertQueries(array(
+	'-- getColumns(book_tag)',
+	array(
+		'SELECT * FROM [book] WHERE ([id] IN (SELECT [book_id] FROM [book_tag] WHERE ([tag_id] = 21)))',
+		'mysql' => 'SELECT [book_id] FROM [book_tag] WHERE ([tag_id] = 21)',
+	),
+	array(
+		'mysql' => 'SELECT * FROM `book` WHERE ([id] IN ((1), (3), (4)))',
+	),
+));
 
 
 Assert::exception(function() use ($context) {
@@ -176,6 +226,9 @@ Assert::exception(function() use ($connection, $reflection) {
 	$sqlBuilder = new SqlBuilder('book', $connection, $reflection);
 	$sqlBuilder->addWhere('id = ?', array(1, 2));
 }, 'Nette\InvalidArgumentException', 'Column operator does not accept array argument.');
+
+assertQueries(array(
+));
 
 
 test(function() use ($driverName, $context, $connection, $reflection) {

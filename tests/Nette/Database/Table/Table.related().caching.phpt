@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -36,6 +37,24 @@ test(function() use ($context) {
 		'Neon',
 	), $tags);
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	'SELECT * FROM [book]',
+	'-- getTables',
+	'-- getForeignKeys(author)',
+	'-- getForeignKeys(book)',
+	'-- getForeignKeys(book_tag)',
+	'-- getForeignKeys(book_tag_alt)',
+	'-- getForeignKeys(note)',
+	'-- getForeignKeys(tag)',
+	'-- getColumns(book_tag)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1, 2, 3, 4))',
+	'-- getColumns(tag)',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22, 23))',
+	'-- getColumns(book_tag_alt)',
+	'SELECT * FROM [book_tag_alt] WHERE ([book_tag_alt].[book_id] IN (1, 2, 3, 4))',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22, 23, 24))',
+));
 
 
 test(function() use ($context) {
@@ -59,6 +78,16 @@ test(function() use ($context) {
 	}
 	Assert::same(array('JavaScript', 'PHP', 'MySQL'), $books);
 });
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT * FROM [author] WHERE ([id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) AND ([translator_id] IS NULL)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (2))',
+	'SELECT * FROM [tag] WHERE ([id] IN (23))',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) AND (NOT [translator_id] IS NULL)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1)) ORDER BY [book_tag].[book_id], [tag_id]',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22))',
+));
 
 
 test(function() use ($context) {
@@ -80,3 +109,17 @@ test(function() use ($context) {
 		'Jakub Vrana',
 	), $translators);
 });
+assertQueries(array(
+	'UPDATE book SET translator_id = 12 WHERE id = 2',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	array(
+		'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) LIMIT 1',
+		'sqlsrv' => 'SELECT TOP 1 * FROM [book] WHERE ([book].[author_id] IN (11))',
+	),
+	'SELECT * FROM [author] WHERE ([id] IN (11))',
+	array(
+		'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) LIMIT 2',
+		'sqlsrv' => 'SELECT TOP 2 * FROM [book] WHERE ([book].[author_id] IN (11))',
+	),
+	'SELECT * FROM [author] WHERE ([id] IN (11, 12))',
+));

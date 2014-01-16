@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 for ($i = 1; $i <= 2; ++$i) {
@@ -31,3 +32,15 @@ for ($i = 1; $i <= 2; ++$i) {
 	}
 
 }
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT * FROM [author]',
+	'-- getColumns(book)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13))',
+	'SELECT * FROM [author] WHERE ([id] = 13)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (13))',
+	'SELECT * FROM [author]',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13))',
+	'SELECT * FROM [author] WHERE ([id] = 13)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (13))',
+));

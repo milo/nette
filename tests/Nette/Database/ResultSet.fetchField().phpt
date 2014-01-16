@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -21,3 +22,6 @@ test(function() use ($context) {
 	Assert::same(12, $res->fetchField(1));
 	Assert::same('Geek', $res->fetchField('name'));
 });
+assertQueries(array(
+	'SELECT name, id FROM author ORDER BY id'
+));

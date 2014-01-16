@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) { // fetch
@@ -22,11 +23,17 @@ test(function() use ($context) { // fetch
 		'id' => 11,
 	)), $row);
 });
+assertQueries(array(
+	'SELECT name, id FROM author WHERE id = 11'
+));
 
 
 test(function() use ($context) { // fetchField
 	Assert::same('Jakub Vrana', $context->fetchField('SELECT name FROM author ORDER BY id'));
 });
+assertQueries(array(
+	'SELECT name FROM author ORDER BY id'
+));
 
 
 test(function() use ($context) { // fetchPairs
@@ -36,6 +43,9 @@ test(function() use ($context) { // fetchPairs
 		'Geek' => 13,
 	), $pairs);
 });
+assertQueries(array(
+	'SELECT name, id FROM author WHERE id > 11 ORDER BY id'
+));
 
 
 test(function() use ($context) { // fetchAll
@@ -45,3 +55,6 @@ test(function() use ($context) { // fetchAll
 		Nette\Database\Row::from(array('name' => 'David Grudl', 'id' => 12)),
 	), $arr);
 });
+assertQueries(array(
+	'SELECT name, id FROM author WHERE id < 13 ORDER BY id'
+));

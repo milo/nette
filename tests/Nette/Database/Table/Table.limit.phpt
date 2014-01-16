@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 Assert::same(
@@ -50,3 +51,11 @@ Assert::same(
 	$context->table('author')->page(2, 2, $count)->getSql()
 );
 Assert::same(2, $count);
+
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT COUNT(*) FROM [author]',
+	'SELECT COUNT(*) FROM [author]',
+	'SELECT COUNT(*) FROM [author]',
+	'SELECT COUNT(*) FROM [author]',
+));

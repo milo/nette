@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -26,3 +27,10 @@ test(function() use ($context) {
 		'Nette',
 	), $apps);
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	array(
+		"SELECT * FROM [book] WHERE ([title] LIKE '%t%') ORDER BY [title] LIMIT 3",
+		'sqlsrv' => "SELECT TOP 3 * FROM [book] WHERE ([title] LIKE '%t%') ORDER BY [title]",
+	),
+));

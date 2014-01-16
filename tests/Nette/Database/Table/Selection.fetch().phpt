@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -24,3 +25,18 @@ test(function() use ($context) {
 
 	Assert::same(array('PHP'), $tags);
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	'SELECT * FROM [book] WHERE ([title] = ?)',
+	'-- getTables',
+	'-- getForeignKeys(author)',
+	'-- getForeignKeys(book)',
+	'-- getForeignKeys(book_tag)',
+	'-- getForeignKeys(book_tag_alt)',
+	'-- getForeignKeys(note)',
+	'-- getForeignKeys(tag)',
+	'-- getColumns(book_tag)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1)) AND ([tag_id] = 21)',
+	'-- getColumns(tag)',
+	'SELECT * FROM [tag] WHERE ([id] IN (21))',
+));

@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -21,6 +22,12 @@ test(function() use ($context) {
 
 	Assert::same( 3, $context->fetchField('SELECT id FROM book WHERE id = ', 3) );
 });
+assertQueries(array(
+	'::beginTransaction',
+	'DELETE FROM book',
+	'::rollBack',
+	'SELECT id FROM book WHERE id =  3',
+));
 
 
 test(function() use ($context) {
@@ -30,3 +37,9 @@ test(function() use ($context) {
 
 	Assert::false( $context->fetchField('SELECT id FROM book WHERE id = ', 3) );
 });
+assertQueries(array(
+	'::beginTransaction',
+	'DELETE FROM book',
+	'::commit',
+	'SELECT id FROM book WHERE id =  3',
+));

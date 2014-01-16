@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -26,3 +27,7 @@ test(function() use ($context) {
 		'next_volume' => NULL,
 	), $book->toArray());
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	'SELECT * FROM [book] WHERE ([book].[id] = 1)',
+));

@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 $driver = $connection->getSupplementalDriver();
@@ -25,6 +26,9 @@ Assert::same( array(
 	array('name' => 'book_tag', 'view' => FALSE),
 	array('name' => 'tag', 'view' => FALSE),
 ), $tables );
+assertQueries(array(
+	'-- getTables'
+));
 
 
 $columns = $driver->getColumns('author');
@@ -108,6 +112,9 @@ switch ($driverName) {
 }
 
 Assert::same($expectedColumns, $columns);
+assertQueries(array(
+	'-- getColumns(author)'
+));
 
 
 $indexes = $driver->getIndexes('book_tag');
@@ -175,9 +182,15 @@ switch ($driverName) {
 	default:
 		Assert::fail("Unsupported driver $driverName");
 }
+assertQueries(array(
+	'-- getIndexes(book_tag)'
+));
 
 
 $reflection = new Nette\Database\Reflection\DiscoveredReflection($connection);
 
 $primary = $reflection->getPrimary('book_tag');
 Assert::same(array('book_id', 'tag_id'), $primary);
+assertQueries(array(
+	'-- getColumns(book_tag)'
+));

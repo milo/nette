@@ -11,6 +11,7 @@ use Tester\Assert;
 use Nette\Database\SqlLiteral;
 
 require __DIR__ . '/connect.inc.php'; // create $connection
+$monitor->start();
 
 
 $preprocessor = new Nette\Database\SqlPreprocessor($connection);
@@ -206,3 +207,6 @@ test(function() use ($preprocessor, $driverName) { // multi & update
 	)), $sql );
 	Assert::same( array(), $params );
 });
+
+assertQueries(array(
+));

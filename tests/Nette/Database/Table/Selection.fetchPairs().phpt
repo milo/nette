@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -24,6 +25,9 @@ test(function() use ($context) {
 		3 => 'Nette',
 	), $apps);
 });
+assertQueries(array(
+	'-- getColumns(book)', 'SELECT * FROM [book] ORDER BY [title]'
+));
 
 
 test(function() use ($context) {
@@ -35,6 +39,9 @@ test(function() use ($context) {
 		4 => 4,
 	), $ids);
 });
+assertQueries(array(
+	'SELECT * FROM [book] ORDER BY [id]'
+));
 
 
 test(function() use ($context) {
@@ -46,3 +53,19 @@ test(function() use ($context) {
 		'2002-02-20 00:00:00' => 'Jakub Vrana',
 	), $list);
 });
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	array(
+		"UPDATE [author] SET [born]='2002-02-20 00:00:00' WHERE ([author].[id] = 11)",
+		'sqlite' => 'UPDATE [author] SET [born]=1014159600 WHERE ([author].[id] = 11)',
+	),
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT * FROM [author] WHERE ([author].[id] = 12)',
+	array(
+		"UPDATE [author] SET [born]='2002-02-02 00:00:00' WHERE ([author].[id] = 12)",
+		'sqlite' => 'UPDATE [author] SET [born]=1012604400 WHERE ([author].[id] = 12)',
+	),
+	'SELECT * FROM [author] WHERE ([author].[id] = 12)',
+	'SELECT * FROM [author] WHERE ([born] IS NOT NULL) ORDER BY [born]',
+));

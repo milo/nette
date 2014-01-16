@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -24,6 +25,9 @@ test(function() use ($context) {
 
 	$res->fetch();
 });
+assertQueries(array(
+	'SELECT name, name FROM author'
+));
 
 
 test(function() use ($context, $driverName) { // tests closeCursor()
@@ -36,5 +40,13 @@ test(function() use ($context, $driverName) { // tests closeCursor()
 
 		$res = $context->query('SELECT * FROM book');
 		foreach ($res as $row) {}
+
+		assertQueries(array(
+			'CREATE DEFINER = CURRENT_USER PROCEDURE [testProc](IN param int(10) unsigned) BEGIN SELECT * FROM book WHERE id != param; END;;',
+			'CALL testProc(1)',
+			'SELECT * FROM book',
+		));
 	}
 });
+assertQueries(array(
+));

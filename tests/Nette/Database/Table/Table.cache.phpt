@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) { // Testing Selection caching
@@ -36,6 +37,13 @@ test(function() use ($context) { // Testing Selection caching
 	$bookSelection = $context->table('book')->wherePrimary(2);
 	Assert::same(reformat('SELECT [id], [title], [translator_id], [author_id] FROM [book] WHERE ([book].[id] = ?)'), $bookSelection->getSql());
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	'SELECT * FROM [book] WHERE ([book].[id] = 2)',
+	'-- getForeignKeys(book)',
+	'SELECT [id], [title], [translator_id] FROM [book] WHERE ([book].[id] = 2)',
+	'SELECT * FROM [book] WHERE ([book].[id] = 2)',
+));
 
 
 test(function() use ($context) { // Testing GroupedSelection reinvalidation caching
@@ -63,6 +71,13 @@ test(function() use ($context) { // Testing GroupedSelection reinvalidation cach
 		'Nette' => 12,
 	), $books);
 });
+assertQueries(array(
+	'-- getColumns(author)',
+	'SELECT * FROM [author]',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13)) ORDER BY [book].[author_id], [title]',
+	'SELECT * FROM [author]',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13)) ORDER BY [book].[author_id], [title]',
+));
 
 
 before(function() use ($cacheMemoryStorage) {
@@ -90,6 +105,12 @@ test(function() use ($context) {
 		'Jakub Vrana',
 	), $authors);
 });
+assertQueries(array(
+	'SELECT * FROM [book]',
+	'SELECT [id] FROM [book]',
+	'SELECT * FROM [book]',
+	'SELECT * FROM [author] WHERE ([id] IN (11, 12))',
+));
 
 
 test(function() use ($context) {
@@ -108,6 +129,10 @@ test(function() use ($context) {
 		Assert::same(array('id', 'author_id'), array_keys((array) $property->getValue($related)));
 	}
 });
+assertQueries(array(
+	'SELECT * FROM [author]',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11, 12, 13))',
+));
 
 
 test(function() use ($context) {
@@ -121,6 +146,11 @@ test(function() use ($context) {
 	$books = $author->related('book')->where('translator_id', 11);
 	Assert::same(array('id', 'author_id'), $books->getPreviousAccessedColumns());
 });
+assertQueries(array(
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11)) AND ([translator_id] = 99)',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+));
 
 
 test(function() use ($context) { // Test saving the union of needed cols, the second call is subset
@@ -145,6 +175,13 @@ test(function() use ($context) { // Test saving the union of needed cols, the se
 		$author->related('book')->getSql()
 	);
 });
+assertQueries(array(
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT [id], [author_id], [translator_id], [title] FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+));
 
 
 test(function() use ($context) { // Test saving the union of needed cols, the second call is not subset
@@ -168,3 +205,11 @@ test(function() use ($context) { // Test saving the union of needed cols, the se
 		$author->related('book')->getSql()
 	);
 });
+assertQueries(array(
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+	'SELECT [id], [author_id], [translator_id] FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [book] WHERE ([book].[author_id] IN (11))',
+	'SELECT * FROM [author] WHERE ([author].[id] = 11)',
+));

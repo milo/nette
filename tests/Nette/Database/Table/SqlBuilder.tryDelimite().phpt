@@ -11,6 +11,7 @@
 use Tester\Assert;
 
 require __DIR__ . '/../connect.inc.php'; // create $connection
+$monitor->start();
 
 
 $sqlBuilder = new Nette\Database\Table\SqlBuilder('book', $connection, new Nette\Database\Reflection\ConventionalReflection);
@@ -26,3 +27,6 @@ Assert::same(reformat('[hello] [world]'), $tryDelimite->invoke($sqlBuilder, 'hel
 Assert::same(reformat('HELLO([world])'), $tryDelimite->invoke($sqlBuilder, 'HELLO(world)'));
 Assert::same(reformat('hello([world])'), $tryDelimite->invoke($sqlBuilder, 'hello(world)'));
 Assert::same('[hello]', $tryDelimite->invoke($sqlBuilder, '[hello]'));
+
+assertQueries(array(
+));

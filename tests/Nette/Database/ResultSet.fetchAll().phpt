@@ -12,6 +12,7 @@ use Tester\Assert;
 require __DIR__ . '/connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 $res = $context->query('SELECT id FROM book ORDER BY id');
@@ -43,3 +44,7 @@ Assert::equal(array(
 	Nette\Database\Row::from(array('id' => 3)),
 	Nette\Database\Row::from(array('id' => 4)),
 ), $res->fetchAll());
+
+assertQueries(array(
+	'SELECT id FROM book ORDER BY id'
+));

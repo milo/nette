@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test2.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -29,3 +30,17 @@ test(function() use ($context) {
 		'Topic #2' => 'Doe',
 	), $titles);
 });
+assertQueries(array(
+	'-- getColumns(nUsers)',
+	'SELECT * FROM [nUsers] ORDER BY [nUserId]',
+	'-- getTables',
+	'-- getForeignKeys(nPriorities)',
+	'-- getForeignKeys(nTopics)',
+	'-- getForeignKeys(nUsers)',
+	'-- getForeignKeys(nUsers_nTopics)',
+	'-- getForeignKeys(nUsers_nTopics_alt)',
+	'-- getColumns(nUsers_nTopics)',
+	'SELECT * FROM [nUsers_nTopics] WHERE ([nUsers_nTopics].[nUserId] IN (1, 2)) ORDER BY [nUsers_nTopics].[nUserId], [nTopicId]',
+	'-- getColumns(nTopics)',
+	'SELECT * FROM [nTopics] WHERE ([nTopicId] IN (10, 12, 11))',
+));

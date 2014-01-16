@@ -13,6 +13,7 @@ use Tester\Assert;
 require __DIR__ . '/../connect.inc.php'; // create $connection
 
 Nette\Database\Helpers::loadFromFile($connection, __DIR__ . "/../files/{$driverName}-nette_test1.sql");
+$monitor->start();
 
 
 test(function() use ($context) {
@@ -22,6 +23,10 @@ test(function() use ($context) {
 		'title' => '1001 tipu a triku pro PHP',
 	), $book);
 });
+assertQueries(array(
+	'-- getColumns(book)',
+	'SELECT [id], [title] FROM [book] WHERE ([id] = 1)',
+));
 
 
 test(function() use ($context) {
@@ -31,6 +36,9 @@ test(function() use ($context) {
 		'title' => '1001 tipu a triku pro PHP',
 	), $book);
 });
+assertQueries(array(
+	'SELECT [id], [title] FROM [book] WHERE ([id] = 1)'
+));
 
 
 test(function() use ($context) {
@@ -39,6 +47,10 @@ test(function() use ($context) {
 		$book->unknown_column;
 	}, 'Nette\MemberAccessException', 'Cannot read an undeclared column "unknown_column".');
 });
+assertQueries(array(
+	'SELECT * FROM [book] WHERE ([book].[id] = 1)',
+	'-- getForeignKeys(book)',
+));
 
 
 test(function() use ($context) {
@@ -73,6 +85,22 @@ test(function() use ($context) {
 		),
 	), $bookTags);
 });
+assertQueries(array(
+	'SELECT * FROM [book]',
+	'-- getColumns(author)',
+	'SELECT * FROM [author] WHERE ([id] IN (11, 12))',
+	'-- getTables',
+	'-- getForeignKeys(author)',
+	'-- getForeignKeys(book)',
+	'-- getForeignKeys(book_tag)',
+	'-- getForeignKeys(book_tag_alt)',
+	'-- getForeignKeys(note)',
+	'-- getForeignKeys(tag)',
+	'-- getColumns(book_tag)',
+	'SELECT * FROM [book_tag] WHERE ([book_tag].[book_id] IN (1, 2, 3, 4))',
+	'-- getColumns(tag)',
+	'SELECT * FROM [tag] WHERE ([id] IN (21, 22, 23))',
+));
 
 
 test(function() use ($connection) {
