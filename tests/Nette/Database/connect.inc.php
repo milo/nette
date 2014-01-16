@@ -8,6 +8,7 @@
  */
 
 require __DIR__ . '/../bootstrap.php';
+require __DIR__ . '/helpers.inc.php';
 
 
 if (!class_exists('PDO')) {
@@ -57,4 +58,56 @@ function reformat($s)
 	} else {
 		trigger_error("Unsupported driver $driverName", E_USER_WARNING);
 	}
+}
+
+
+/* Listen for all queries */
+$monitor = new QueryMonitor($driverName);
+$connection->onQuery[] = function($foo, $result) use ($monitor) {
+	if (!$result instanceof Exception) {
+		$monitor->query($result->queryString);
+	}
+};
+
+
+/* Wrap supplemental driver to catch reflection queries */
+$driverWrapper = new DriverWrapper($connection->getSupplementalDriver(), $monitor);
+$ref = new ReflectionClass($connection);
+$ref = $ref->getProperty('driver');
+$ref->setAccessible(TRUE);
+$ref->setValue($connection, $driverWrapper);
+$ref->setAccessible(FALSE);
+unset($ref, $driverWrapper);
+
+
+/** Assert queries catched by QueryMonitor */
+function assertQueries(array $queries) {
+	global $monitor;
+
+	$queries = flattenQueries($queries);
+	$queries = array_map('reformat', $queries);
+
+	Tester\Assert::same($queries, $monitor->getQueries());
+}
+
+
+/** Make expected queries flatten for specific driver */
+function flattenQueries(array $queries) {
+	global $driverName;
+
+	$flatten = array();
+	foreach ($queries as $query) {
+		if (is_array($query)) {
+			if (array_key_exists($driverName, $query)) {
+				$flatten[] = $query[$driverName];
+			} elseif (array_key_exists(0, $query)) {
+				$flatten[] = $query[0];
+			}
+
+		} else {
+			$flatten[] = $query;
+		}
+	}
+
+	return $flatten;
 }
