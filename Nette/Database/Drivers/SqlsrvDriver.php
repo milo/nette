@@ -118,6 +118,8 @@ class SqlsrvDriver extends Nette\Object implements Nette\Database\ISupplementalD
 				sys.objects
 			WHERE
 				type IN ('U', 'V')
+			ORDER BY
+				name
 		") as $row) {
 			$tables[] = array(
 				'name' => $row->name,
