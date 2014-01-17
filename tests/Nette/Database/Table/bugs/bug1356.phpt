@@ -24,4 +24,7 @@ foreach ($books as $book) {
 	$book->title;
 }
 
-Assert::same(reformat('SELECT * FROM [book] LIMIT 1'), $books->getSql());
+Assert::same(reformat($driverName === 'sqlsrv'
+	? 'SELECT TOP 1 * FROM [book]'
+	: 'SELECT * FROM [book] LIMIT 1'
+), $books->getSql());
