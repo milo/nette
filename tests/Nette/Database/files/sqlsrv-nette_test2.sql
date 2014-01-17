@@ -1,8 +1,18 @@
+IF OBJECT_ID('note', 'U') IS NOT NULL DROP TABLE note;
+IF OBJECT_ID('book_tag_alt', 'U') IS NOT NULL DROP TABLE book_tag_alt;
+IF OBJECT_ID('book_tag', 'U') IS NOT NULL DROP TABLE book_tag;
+IF OBJECT_ID('book', 'U') IS NOT NULL DROP TABLE book;
+IF OBJECT_ID('tag', 'U') IS NOT NULL DROP TABLE tag;
+IF OBJECT_ID('author', 'U') IS NOT NULL DROP TABLE author;
+
 IF OBJECT_ID('nUsers_nTopics_alt', 'U') IS NOT NULL DROP TABLE [nUsers_nTopics_alt];
 IF OBJECT_ID('nUsers_nTopics', 'U') IS NOT NULL DROP TABLE [nUsers_nTopics];
 IF OBJECT_ID('nTopics', 'U') IS NOT NULL DROP TABLE [nTopics];
 IF OBJECT_ID('nPriorities', 'U') IS NOT NULL DROP TABLE [nPriorities];
 IF OBJECT_ID('nUsers', 'U') IS NOT NULL DROP TABLE [nUsers];
+
+IF OBJECT_ID('types', 'U') IS NOT NULL DROP TABLE types;
+IF OBJECT_ID('types2', 'U') IS NOT NULL DROP TABLE types2;
 
 
 
