@@ -33,6 +33,17 @@ class NetteLoader extends Nette\Object
 		'Nette\Utils\PhpGenerator\Parameter' => 'Nette\PhpGenerator\Parameter',
 		'Nette\Utils\PhpGenerator\PhpLiteral' => 'Nette\PhpGenerator\PhpLiteral',
 		'Nette\Utils\PhpGenerator\Property' => 'Nette\PhpGenerator\Property',
+
+		'Nette\Diagnostics\Bar' => 'Tracy\Bar',
+		'Nette\Diagnostics\BlueScreen' => 'Tracy\BlueScreen',
+		'Nette\Diagnostics\Debugger' => 'Tracy\Debugger',
+		'Nette\Diagnostics\DefaultBarPanel' => 'Tracy\DefaultBarPanel',
+		'Nette\Diagnostics\Dumper' => 'Tracy\Dumper',
+		'Nette\Diagnostics\FireLogger' => 'Tracy\FireLogger',
+		'Nette\Diagnostics\Helpers' => 'Tracy\Helpers',
+		'Nette\Diagnostics\IBarPanel' => 'Tracy\IBarPanel',
+		'Nette\Diagnostics\Logger' => 'Tracy\Logger',
+		'Nette\Diagnostics\OutputDebugger' => 'Tracy\OutputDebugger',
 	);
 
 	/** @var array */

@@ -16,6 +16,7 @@ if (@!include __DIR__ . '/../../vendor/autoload.php') {
 class_alias('Tracy\Debugger', 'Nette\Diagnostics\Debugger');
 class_alias('Tracy\Dumper', 'Nette\Diagnostics\Dumper');
 class_alias('Tracy\BlueScreen', 'Nette\Diagnostics\BlueScreen');
+class_alias('Tracy\IBarPanel', 'Nette\Diagnostics\IBarPanel');
 
 
 // configure environment
