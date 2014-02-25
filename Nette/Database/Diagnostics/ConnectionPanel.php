@@ -8,7 +8,8 @@
 namespace Nette\Database\Diagnostics;
 
 use Nette,
-	Nette\Database\Helpers;
+	Nette\Database\Helpers,
+	Tracy;
 
 
 /**
@@ -16,7 +17,7 @@ use Nette,
  *
  * @author     David Grudl
  */
-class ConnectionPanel extends Nette\Object implements Nette\Diagnostics\IBarPanel
+class ConnectionPanel extends Nette\Object implements Tracy\IBarPanel
 {
 	/** @var int */
 	public $maxQueries = 100;
@@ -56,7 +57,7 @@ class ConnectionPanel extends Nette\Object implements Nette\Diagnostics\IBarPane
 		$source = NULL;
 		$trace = $result instanceof \PDOException ? $result->getTrace() : debug_backtrace(PHP_VERSION_ID >= 50306 ? DEBUG_BACKTRACE_IGNORE_ARGS : FALSE);
 		foreach ($trace as $row) {
-			if (isset($row['file']) && is_file($row['file']) && !Nette\Diagnostics\Debugger::getBluescreen()->isCollapsed($row['file'])) {
+			if (isset($row['file']) && is_file($row['file']) && !Tracy\Debugger::getBluescreen()->isCollapsed($row['file'])) {
 				if ((isset($row['function']) && strpos($row['function'], 'call_user_func') === 0)
 					|| (isset($row['class']) && is_subclass_of($row['class'], '\\Nette\\Database\\Connection'))
 				) {
@@ -86,7 +87,7 @@ class ConnectionPanel extends Nette\Object implements Nette\Diagnostics\IBarPane
 		if (isset($e->queryString)) {
 			$sql = $e->queryString;
 
-		} elseif ($item = Nette\Diagnostics\Helpers::findTrace($e->getTrace(), 'PDO::prepare')) {
+		} elseif ($item = Tracy\Helpers::findTrace($e->getTrace(), 'PDO::prepare')) {
 			$sql = $item['args'][0];
 		}
 		return isset($sql) ? array(
@@ -150,7 +151,7 @@ class ConnectionPanel extends Nette\Object implements Nette\Diagnostics\IBarPane
 				$s .= "</table>";
 			}
 			if ($source) {
-				$s .= Nette\Diagnostics\Helpers::editorLink($source[0], $source[1])->class('nette-DbConnectionPanel-source');
+				$s .= Tracy\Helpers::editorLink($source[0], $source[1]); // ->class('nette-DbConnectionPanel-source'); # dev - not supported by Tracy API
 			}
 
 			$s .= '</td><td>' . $rows . '</td></tr>';

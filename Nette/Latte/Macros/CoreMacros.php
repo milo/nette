@@ -11,7 +11,8 @@ use Nette,
 	Nette\Latte,
 	Nette\Latte\CompileException,
 	Nette\Latte\MacroNode,
-	Nette\Latte\PhpWriter;
+	Nette\Latte\PhpWriter,
+	Tracy;
 
 
 /**
@@ -301,7 +302,7 @@ class CoreMacros extends MacroSet
 	public function macroDump(MacroNode $node, PhpWriter $writer)
 	{
 		$args = $writer->formatArgs();
-		return 'Nette\Diagnostics\Debugger::barDump(' . ($node->args ? "array(" . $writer->write('%var', $args) . " => $args)" : 'get_defined_vars()')
+		return 'Tracy\Debugger::barDump(' . ($node->args ? "array(" . $writer->write('%var', $args) . " => $args)" : 'get_defined_vars()')
 			. ', "Template " . str_replace(dirname(dirname($template->getFile())), "\xE2\x80\xA6", $template->getFile()))';
 	}
 
